@@ -1,0 +1,33 @@
+services:
+  api:
+    build: .
+    container_name: notes-api
+    ports:
+      - "3000:3000"
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: root
+      DB_NAME: rest_notes
+    volumes:
+      - .:/app
+      - /app/node_modules
+
+  db:
+    image: postgres:16
+    container_name: notes-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: rest_notes
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
