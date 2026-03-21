@@ -1,0 +1,42 @@
+### Получить все заметки
+GET http://localhost:3000/api/notes
+
+### Получить заметки с пагинацией
+GET http://localhost:3000/api/notes?page=1&limit=5
+
+### Фильтрация по тегу
+GET http://localhost:3000/api/notes?tag=typescript
+
+### Поиск по тексту
+GET http://localhost:3000/api/notes?search=docker
+
+### Сортировка по дате (новые сверху)
+GET http://localhost:3000/api/notes?sortBy=createdAt&order=desc
+
+### Комбинация фильтрации, поиска, сортировки и пагинации
+GET http://localhost:3000/api/notes?page=1&limit=5&tag=ts&search=api&sortBy=title&order=asc
+
+### Получить заметку по ID
+GET http://localhost:3000/api/notes/1
+
+### Создать заметку
+POST http://localhost:3000/api/notes
+Content-Type: application/json
+
+{
+  "title": "Новая заметка",
+  "content": "Это тестовая заметка",
+  "tags": ["ts", "api"]
+}
+
+### Обновить заметку
+PUT http://localhost:3000/api/notes/1
+Content-Type: application/json
+
+{
+  "title": "Обновлённый заголовок",
+  "content": "Новое содержимое"
+}
+
+### Удалить заметку
+DELETE http://localhost:3000/api/notes/1

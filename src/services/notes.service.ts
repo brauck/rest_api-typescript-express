@@ -1,65 +1,56 @@
+import { db } from "../db";
 import { Note } from "../models/Note";
-import * as fs from "fs";
-
-const DB_PATH = "data/notes.json";
 
 export class NotesService {
-  private notes: Note[] = [];
-  private nextId = 1;
-
-  constructor() {
-    this.load();
+  async getAll(): Promise<Note[]> {
+    const result = await db.query("SELECT * FROM notes ORDER BY id ASC");
+    return result.rows;
   }
 
-  private load() {
-    if (fs.existsSync(DB_PATH)) {
-      const raw = fs.readFileSync(DB_PATH, "utf-8");
-      this.notes = JSON.parse(raw);
-      this.nextId = Math.max(0, ...this.notes.map(n => n.id)) + 1;
-    }
+  async getById(id: number): Promise<Note | undefined> {
+    const result = await db.query("SELECT * FROM notes WHERE id = $1", [id]);
+    return result.rows[0];
   }
 
-  private save() {
-    fs.writeFileSync(DB_PATH, JSON.stringify(this.notes, null, 2));
+  async create(title: string, content: string, tags: string[]): Promise<Note> {
+    const result = await db.query(
+      `INSERT INTO notes (title, content, tags)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [title, content, tags]
+    );
+
+    return result.rows[0];
   }
 
-  getAll(): Note[] {
-    return this.notes;
-  }
+  async update(id: number, data: Partial<Note>): Promise<Note | undefined> {
+    const existing = await this.getById(id);
+    if (!existing) return undefined;
 
-  getById(id: number): Note | undefined {
-    return this.notes.find(n => n.id === id);
-  }
-
-  create(title: string, content: string, tags: string[]): Note {
-    const note: Note = {
-      id: this.nextId++,
-      title,
-      content,
-      createdAt: new Date().toISOString(),
-      tags
+    const updated = {
+      title: data.title ?? existing.title,
+      content: data.content ?? existing.content,
+      tags: data.tags ?? existing.tags
     };
 
-    this.notes.push(note);
-    this.save();
-    return note;
+    const result = await db.query(
+      `UPDATE notes
+       SET title = $1, content = $2, tags = $3
+       WHERE id = $4
+       RETURNING *`,
+      [updated.title, updated.content, updated.tags, id]
+    );
+
+    return result.rows[0];
   }
 
-  update(id: number, data: Partial<Note>): Note | undefined {
-    const note = this.getById(id);
-    if (!note) return undefined;
+  async delete(id: number): Promise<boolean> {
+    const result = await db.query("DELETE FROM notes WHERE id = $1", [id]);
 
-    Object.assign(note, data);
-    this.save();
-    return note;
-  }
+    if (result.rowCount === null) {
+      return false; // или можно бросить ошибку
+    }
 
-  delete(id: number): boolean {
-    const index = this.notes.findIndex(n => n.id === id);
-    if (index === -1) return false;
-
-    this.notes.splice(index, 1);
-    this.save();
-    return true;
+    return result.rowCount > 0;
   }
 }
